@@ -10,13 +10,13 @@
 <body>
   <main>
     <h1>SKU Generator</h1>
-    <p class="sub">Upload a Matrixify Shopify export (.xlsx) to generate Variant SKUs. Download the re-import file — house SKUs go into <code>Variant SKU</code>, supplier codes are preserved in a <code>custom.supplier_sku</code> metafield, so re-runs stay idempotent. Everything runs in your browser — nothing is uploaded.</p>
+    <p class="sub">Upload a full Matrixify Shopify export (<code>.csv</code> or <code>.xlsx</code>) to generate Variant SKUs for every row. Download the re-import file (same format you uploaded) — house SKUs go into <code>Variant SKU</code>, supplier codes are preserved in a <code>custom.supplier_sku</code> metafield, so re-runs stay idempotent. Everything runs in your browser — nothing is uploaded.</p>
 
     <section id="drop" class="drop">
-      <input type="file" id="file" accept=".xlsx" hidden />
-      <button id="pick" type="button">Choose .xlsx file</button>
+      <input type="file" id="file" accept=".csv,.xlsx" hidden />
+      <button id="pick" type="button">Choose .csv or .xlsx file</button>
       <span id="filename" class="filename"></span>
-      <p class="hint">or drag &amp; drop it here</p>
+      <p class="hint">or drag &amp; drop it here — upload the whole export, not a single product</p>
     </section>
 
     <p id="error" class="error" hidden></p>
@@ -29,7 +29,7 @@
       </details>
       <div class="toolbar">
         <input id="filter" type="search" placeholder="Filter by handle, title or SKU…" />
-        <button id="download" type="button">Download .xlsx (re-import)</button>
+        <button id="download" type="button">Download re-import file</button>
       </div>
       <div class="table-wrap">
         <table id="table">

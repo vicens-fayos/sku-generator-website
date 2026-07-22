@@ -49,3 +49,12 @@ export function toCSV(header, rows) {
   for (const row of rows) lines.push(header.map((h) => esc(row[h])).join(","));
   return lines.join("\r\n");
 }
+
+// Serialize an array-of-arrays (first row = header) to RFC-4180 CSV text.
+export function aoaToCSV(aoa) {
+  const esc = (v) => {
+    const s = v === undefined || v === null ? "" : String(v);
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  return aoa.map((row) => row.map(esc).join(",")).join("\r\n");
+}

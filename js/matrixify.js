@@ -6,6 +6,7 @@
 
 import { supplierSkuColumn } from "./sku/assign.js";
 import { SUPPLIER_SKU_COLUMN } from "./sku/config.js";
+import { aoaToCSV } from "./csv.js";
 
 const s = (v) => (v === undefined || v === null ? "" : String(v));
 
@@ -39,4 +40,11 @@ export function buildReimport(header, rows, result) {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Products");
   return XLSX.write(wb, { type: "array", bookType: "xlsx" });
+}
+
+// CSV variant of buildReimport: the full export as CSV text, Variant SKU filled
+// and the supplier metafield column added/filled. Mirrors Python's
+// export_with_skus.csv (plus the supplier column).
+export function buildReimportCsv(header, rows, result) {
+  return aoaToCSV(buildReimportAoa(header, rows, result));
 }
