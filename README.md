@@ -1,8 +1,22 @@
 # SKU Generator Website
 
 Upload a Matrixify Shopify product export (`.xlsx`) and get the generated
-Shopify **Variant SKU** for every variant row — as a table and a downloadable
-CSV. Runs 100% in the browser; nothing is uploaded to any server.
+Shopify **Variant SKU** for every variant row — as a review table and a
+downloadable **re-import `.xlsx`**. Runs 100% in the browser; nothing is
+uploaded to any server.
+
+## Idempotency (supplier-SKU metafield)
+
+The house SKU goes into `Variant SKU`, so the durable supplier code is kept in a
+per-variant metafield (`custom.supplier_sku`) instead of being overwritten. The
+generator reads the supplier code from that metafield first, falling back to a
+non-house `Variant SKU` on the first run. A `Variant SKU` already in our house
+format (`VENDOR-TYPE…`) is never re-hashed. So `generate → import → re-export →
+regenerate` is stable — no double-hashing, no lost supplier codes. The
+downloaded file is the uploaded file with `Variant SKU` set to the house SKU and
+the `custom.supplier_sku` column filled (added if absent) — re-import it via
+Matrixify to complete the round-trip. The metafield key is configurable in
+`js/sku/config.js`.
 
 ## SKU format
 

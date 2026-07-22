@@ -1,7 +1,7 @@
 import { readProducts } from "./xlsx.js";
 import { buildReferences } from "./sku/loaders.js";
 import { generate } from "./sku/engine.js";
-import { toCSV } from "./csv.js";
+import { buildReimport } from "./matrixify.js";
 
 const REF_FILES = {
   vendor: "data/vendor_mapping_canonical.csv",
@@ -30,6 +30,8 @@ function loadRefs() {
 
 const $ = (id) => document.getElementById(id);
 let lastResult = null;
+let lastInput = null;   // { header, rows } from the uploaded file
+let lastFileName = "export.xlsx";
 
 function showError(msg) {
   const el = $("error");
@@ -81,24 +83,23 @@ function renderTable(rows, filter) {
       <td>${escapeHtml(r.handle)}</td>
       <td>${escapeHtml(r.title)}</td>
       <td class="sku">${escapeHtml(r.sku)}</td>
+      <td class="sku">${escapeHtml(r.supplierSku)}</td>
       <td class="review">${escapeHtml(r.reviewReason || "")}</td></tr>`)
     .join("");
   if (shown.length > MAX) {
     $("tbody").insertAdjacentHTML("beforeend",
-      `<tr><td colspan="4">Showing first ${MAX} of ${shown.length} rows — use the filter or download the CSV for all.</td></tr>`);
+      `<tr><td colspan="5">Showing first ${MAX} of ${shown.length} rows — use the filter or download the file for all.</td></tr>`);
   }
 }
 
-function downloadCSV(rows) {
-  const variant = rows.filter((r) => r.isVariant);
-  const header = ["Handle", "Title", "Variant SKU", "Review Reason"];
-  const csvRows = variant.map((r) => ({
-    Handle: r.handle, Title: r.title, "Variant SKU": r.sku, "Review Reason": r.reviewReason || "",
-  }));
-  const blob = new Blob([toCSV(header, csvRows)], { type: "text/csv" });
+function downloadReimport() {
+  if (!lastInput || !lastResult) return;
+  const buf = buildReimport(lastInput.header, lastInput.rows, lastResult);
+  const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const base = lastFileName.replace(/\.xlsx$/i, "");
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url; a.download = "skus.csv";
+  a.href = url; a.download = `${base}-with-skus.xlsx`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -106,10 +107,12 @@ function downloadCSV(rows) {
 async function handleFile(file) {
   $("error").hidden = true;
   $("filename").textContent = file.name;
+  lastFileName = file.name || "export.xlsx";
   try {
     const [refs, buf] = await Promise.all([loadRefs(), file.arrayBuffer()]);
-    const { rows } = readProducts(new Uint8Array(buf));
-    lastResult = generate(rows, refs);
+    const { header, rows } = readProducts(new Uint8Array(buf));
+    lastInput = { header, rows };
+    lastResult = generate(rows, refs, header);
     renderStats(lastResult.stats);
     renderWarnings(lastResult.warnings);
     renderTable(lastResult.rows, "");
@@ -122,7 +125,7 @@ async function handleFile(file) {
 // Wire up events.
 $("pick").addEventListener("click", () => $("file").click());
 $("file").addEventListener("change", (e) => { if (e.target.files[0]) handleFile(e.target.files[0]); });
-$("download").addEventListener("click", () => { if (lastResult) downloadCSV(lastResult.rows); });
+$("download").addEventListener("click", () => downloadReimport());
 $("filter").addEventListener("input", (e) => { if (lastResult) renderTable(lastResult.rows, e.target.value); });
 
 const drop = $("drop");

@@ -10,7 +10,7 @@
 <body>
   <main>
     <h1>SKU Generator</h1>
-    <p class="sub">Upload a Matrixify Shopify export (.xlsx) to generate Variant SKUs. Everything runs in your browser — nothing is uploaded.</p>
+    <p class="sub">Upload a Matrixify Shopify export (.xlsx) to generate Variant SKUs. Download the re-import file — house SKUs go into <code>Variant SKU</code>, supplier codes are preserved in a <code>custom.supplier_sku</code> metafield, so re-runs stay idempotent. Everything runs in your browser — nothing is uploaded.</p>
 
     <section id="drop" class="drop">
       <input type="file" id="file" accept=".xlsx" hidden />
@@ -29,11 +29,11 @@
       </details>
       <div class="toolbar">
         <input id="filter" type="search" placeholder="Filter by handle, title or SKU…" />
-        <button id="download" type="button">Download CSV</button>
+        <button id="download" type="button">Download .xlsx (re-import)</button>
       </div>
       <div class="table-wrap">
         <table id="table">
-          <thead><tr><th>Handle</th><th>Title</th><th>Variant SKU</th><th>Review</th></tr></thead>
+          <thead><tr><th>Handle</th><th>Title</th><th>Variant SKU</th><th>Supplier SKU</th><th>Review</th></tr></thead>
           <tbody id="tbody"></tbody>
         </table>
       </div>

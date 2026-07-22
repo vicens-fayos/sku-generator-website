@@ -1,11 +1,13 @@
 import { groupProducts } from "./classify.js";
-import { assignPass1, assignPass2 } from "./assign.js";
+import { assignPass1, assignPass2, supplierSkuColumn } from "./assign.js";
 
 const s = (v) => (v === undefined || v === null ? "" : String(v));
 
-export function generate(rows, refs) {
+export function generate(rows, refs, header) {
+  const cols = header || (rows[0] ? Object.keys(rows[0]) : []);
+  const supplierCol = supplierSkuColumn(cols);
   const products = groupProducts(rows, refs);
-  const pass1 = assignPass1(products, refs);
+  const pass1 = assignPass1(products, refs, supplierCol);
   const pass2 = assignPass2(pass1);
 
   // Map each variant row object -> its assignment (row objects are shared references).
@@ -20,7 +22,7 @@ export function generate(rows, refs) {
   const out = rows.map((row) => {
     const a = byRow.get(row);
     if (!a) {
-      return { handle: s(row.Handle), title: s(row.Title), sku: "", reviewReason: null, isVariant: false };
+      return { handle: s(row.Handle), title: s(row.Title), sku: "", supplierSku: "", reviewReason: null, isVariant: false };
     }
     const p = a.product;
     let reviewReason = p.reviewReason;
@@ -32,7 +34,7 @@ export function generate(rows, refs) {
     }
     const sku = a.sku === null || a.sku === undefined ? "" : a.sku;
     if (sku === "" || reviewReason === "UNRESOLVED_OPTION") unresolvedRows++;
-    return { handle: p.handle, title: s(row.Title), sku, reviewReason, isVariant: true };
+    return { handle: p.handle, title: s(row.Title), sku, supplierSku: a.supplierSku, reviewReason, isVariant: true };
   });
 
   const review = products.filter((p) => p.reviewReason).length;
