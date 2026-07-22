@@ -1,0 +1,42 @@
+type_group,type_abv,source
+ACCESSORIES,AC,employee
+ADAPTORS,AD,employee
+AIM POINTS & LASERS,AL,new
+AIRGUNS,AG,employee
+AMMO,AM,employee
+BAGS,BG,employee
+BARRELS,BA,employee
+BINOCULARS,BI,new
+BOTTLES,BT,employee
+CASES,CA,employee
+CHRONOGRAPHS,CH,employee
+CLIP,CL,new
+COMPRESSOR MAINTENANCE,CM,employee
+COMPRESSORS,CO,employee
+GAUGES,GG,employee
+GIFT CARD,GC,new
+GRIPS,GR,employee
+HANDPUMP,HP,employee
+KITCONVERT,CK,employee
+KITS,KT,employee
+MAGAZINES,MG,employee
+MANUALS,MA,employee
+MERCHANDISE,ME,employee
+MOUNTS,MT,employee
+O-RINGS,OR,new
+OPTICS,OP,new
+OPTICS ACCESSORIES,OA,employee
+OTHERS,OT,new
+PCP FILL,PF,employee
+PLENUMS,PL,employee
+RAILS,RA,new
+RANGEFINDERS,RF,new
+REGULATORS,RG,employee
+SERVICES,SV,employee
+SLUG MOLD,SM,employee
+SPARE PARTS,SP,employee
+STOCKS,ST,new
+STOCKS/GRIPS,SG,new
+SUPPORTS,SU,employee
+SUPPRESSORS,SS,employee
+TOOLS,TO,employee
