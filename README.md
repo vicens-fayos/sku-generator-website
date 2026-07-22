@@ -12,18 +12,20 @@ server.
 > reproduce it. The engine classifies each row (product lead / variant /
 > image placeholder) exactly like the Python batch tool.
 
-## Idempotency (supplier-SKU metafield)
+## Idempotency (supplier code in `Variant Barcode`)
 
-The house SKU goes into `Variant SKU`, so the durable supplier code is kept in a
-per-variant metafield (`custom.supplier_sku`) instead of being overwritten. The
-generator reads the supplier code from that metafield first, falling back to a
-non-house `Variant SKU` on the first run. A `Variant SKU` already in our house
-format (`VENDOR-TYPE…`) is never re-hashed. So `generate → import → re-export →
-regenerate` is stable — no double-hashing, no lost supplier codes. The
-downloaded file is the uploaded file with `Variant SKU` set to the house SKU and
-the `custom.supplier_sku` column filled (added if absent) — re-import it via
-Matrixify to complete the round-trip. The metafield key is configurable in
-`js/sku/config.js`.
+The house SKU goes into `Variant SKU`, so the durable supplier code is kept in
+the native per-variant **`Variant Barcode`** field instead of being overwritten.
+(Variant metafields don't round-trip through native Shopify CSV — export/import
+drops them — so the barcode field, confirmed unused for these shops, carries the
+code.) Resolution per row: a non-house `Variant SKU` is the supplier code on the
+first run; once the SKU is house-format (`VENDOR-TYPE…`) the code is read back
+from `Variant Barcode`; a blank `Variant SKU` is a generated row (any stray
+barcode ignored). A house-format `Variant SKU` is never re-hashed. So
+`generate → import → re-export → regenerate` is stable — no double-hashing, no
+lost supplier codes. The downloaded file is the uploaded file with `Variant SKU`
+set to the house SKU and `Variant Barcode` holding the supplier code (cleared for
+generated rows). The carrier field is configurable in `js/sku/config.js`.
 
 ## SKU format
 
