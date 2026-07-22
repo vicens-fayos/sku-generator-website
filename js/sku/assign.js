@@ -1,6 +1,6 @@
 import { hash6, hash4 } from "./hash.js";
 import { valueKey } from "./loaders.js";
-import { SUPPLIER_SKU_METAFIELD_KEY } from "./config.js";
+import { SUPPLIER_SKU_FIELD } from "./config.js";
 
 const OPTION_SLOTS = [
   ["Option1 Name", "Option1 Value"],
@@ -18,34 +18,21 @@ const s = (v) => (v === undefined || v === null ? "" : String(v));
 // supplier codes in the reference exports, so parity is preserved.
 const HOUSE_SKU_RE = /^[A-Z0-9]{2,3}-[A-Z0-9]{2}(-|$)/;
 
-// Substring that marks the supplier-SKU metafield column. We match on the bare
-// `namespace.key` so both Matrixify header styles are recognized: the xlsx
-// `Variant Metafield: custom.supplier_sku [single_line_text_field]` and the csv
-// `Supplier SKU (variant.metafields.custom.supplier_sku)`. Broader than the
-// Python (which keys on `metafields.custom.supplier_sku`) — required because the
-// xlsx style carries no literal `metafields.` prefix.
-const SUPPLIER_COLUMN_KEY = SUPPLIER_SKU_METAFIELD_KEY.toLowerCase();
-
 export function isHouseSku(str) {
   return HOUSE_SKU_RE.test(s(str));
 }
 
-export function supplierSkuColumn(header) {
-  if (!header) return null;
-  for (const col of header) {
-    if (s(col).toLowerCase().includes(SUPPLIER_COLUMN_KEY)) return col;
-  }
-  return null;
-}
-
-export function resolveSupplierSku(row, supplierCol) {
-  if (supplierCol) {
-    const meta = s(row[supplierCol]).trim();
-    if (meta) return meta;
-  }
+// The durable supplier code for one row, or "" if it has none (SPEC idempotency).
+// - Variant SKU non-empty and NOT house-format → first run: the code still sits
+//   in Variant SKU; use it (any stray Variant Barcode is ignored).
+// - Variant SKU is house-format → already processed: read the code back from the
+//   carrier field (Variant Barcode).
+// - Variant SKU blank → never had a code → generated (ignore any stray barcode).
+export function resolveSupplierSku(row) {
   const variantSku = s(row["Variant SKU"]).trim();
-  if (variantSku && !isHouseSku(variantSku)) return variantSku;
-  return "";
+  if (!variantSku) return "";
+  if (!isHouseSku(variantSku)) return variantSku;
+  return s(row[SUPPLIER_SKU_FIELD]).trim();
 }
 
 export function buildSegments(row, filledNames, refs) {
@@ -67,7 +54,7 @@ function buildCore(prefix, segments) {
   return [prefix, ...segments].join("-");
 }
 
-function assignProduct(product, refs, supplierCol) {
+function assignProduct(product, refs) {
   const assignments = [];
   const filled = ["", "", ""];
   for (const row of product.rows) {
@@ -77,8 +64,8 @@ function assignProduct(product, refs, supplierCol) {
     });
 
     // Resolve the durable supplier code first — even for unresolved-prefix rows,
-    // so a real code is captured into the metafield and never lost.
-    const supplierSku = resolveSupplierSku(row, supplierCol);
+    // so a real code is captured into the carrier field and never lost.
+    const supplierSku = resolveSupplierSku(row);
 
     if (product.prefix === null) {
       assignments.push({ handle: product.handle, product, row, providerAnchored: false,
@@ -101,9 +88,9 @@ function assignProduct(product, refs, supplierCol) {
   return assignments;
 }
 
-export function assignPass1(products, refs, supplierCol = null) {
+export function assignPass1(products, refs) {
   const assignments = [];
-  for (const product of products) assignments.push(...assignProduct(product, refs, supplierCol));
+  for (const product of products) assignments.push(...assignProduct(product, refs));
   const providerCount = assignments.filter((a) => a.providerAnchored).length;
   return { assignments, providerCount, generatedCount: assignments.length - providerCount };
 }

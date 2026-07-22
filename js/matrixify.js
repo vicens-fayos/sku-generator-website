@@ -1,11 +1,12 @@
-// Builds a Matrixify re-import workbook: the uploaded file returned with
-// `Variant SKU` set to the house SKU and the supplier code written into the
-// `custom.supplier_sku` variant-metafield column (added if the upload lacked
-// one). Re-importing sets both, so the durable supplier code survives and
-// re-runs stay idempotent. Uses the global XLSX (vendored SheetJS).
+// Builds the re-import file: the uploaded export returned with `Variant SKU`
+// set to the house SKU and the supplier code carried in the native
+// `Variant Barcode` field (supplier code for provider variants, cleared for
+// generated ones). Native Shopify CSV round-trips `Variant Barcode` reliably,
+// unlike variant metafields. Real exports already contain the column, so none
+// is appended in practice; the `includes` guard only helps trimmed fixtures.
+// Serializes to xlsx (SheetJS) or CSV.
 
-import { supplierSkuColumn } from "./sku/assign.js";
-import { SUPPLIER_SKU_COLUMN } from "./sku/config.js";
+import { SUPPLIER_SKU_FIELD } from "./sku/config.js";
 import { aoaToCSV } from "./csv.js";
 
 const s = (v) => (v === undefined || v === null ? "" : String(v));
@@ -13,8 +14,8 @@ const s = (v) => (v === undefined || v === null ? "" : String(v));
 // Produce the enriched array-of-arrays (header row + data rows). Exported for
 // testing without a workbook. `result.rows` must align by index with `rows`.
 export function buildReimportAoa(header, rows, result) {
-  const supplierCol = supplierSkuColumn(header) || SUPPLIER_SKU_COLUMN;
-  const outHeader = header.includes(supplierCol) ? [...header] : [...header, supplierCol];
+  const field = SUPPLIER_SKU_FIELD; // "Variant Barcode"
+  const outHeader = header.includes(field) ? [...header] : [...header, field];
 
   const aoa = [outHeader];
   for (let i = 0; i < rows.length; i++) {
@@ -25,7 +26,7 @@ export function buildReimportAoa(header, rows, result) {
     if (r && r.isVariant) {
       // Never blank a real code: only overwrite Variant SKU when we have a house SKU.
       if (r.sku !== "") cell["Variant SKU"] = r.sku;
-      cell[supplierCol] = s(r.supplierSku);
+      cell[field] = s(r.supplierSku); // supplier code, or "" clears it (generated rows)
     }
     aoa.push(outHeader.map((col) => cell[col]));
   }

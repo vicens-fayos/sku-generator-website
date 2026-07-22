@@ -1,13 +1,11 @@
 import { groupProducts } from "./classify.js";
-import { assignPass1, assignPass2, supplierSkuColumn } from "./assign.js";
+import { assignPass1, assignPass2 } from "./assign.js";
 
 const s = (v) => (v === undefined || v === null ? "" : String(v));
 
-export function generate(rows, refs, header) {
-  const cols = header || (rows[0] ? Object.keys(rows[0]) : []);
-  const supplierCol = supplierSkuColumn(cols);
+export function generate(rows, refs) {
   const products = groupProducts(rows, refs);
-  const pass1 = assignPass1(products, refs, supplierCol);
+  const pass1 = assignPass1(products, refs);
   const pass2 = assignPass2(pass1);
 
   // Map each variant row object -> its assignment (row objects are shared references).

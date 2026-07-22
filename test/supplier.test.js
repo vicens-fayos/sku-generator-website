@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { isHouseSku, supplierSkuColumn, resolveSupplierSku } from "../js/sku/assign.js";
+import { isHouseSku, resolveSupplierSku } from "../js/sku/assign.js";
+import { SUPPLIER_SKU_FIELD } from "../js/sku/config.js";
 
 test("isHouseSku recognizes our VENDOR-TYPE output, rejects supplier codes", () => {
   assert.equal(isHouseSku("AE-AM-95286A"), true);
@@ -13,42 +14,22 @@ test("isHouseSku recognizes our VENDOR-TYPE output, rejects supplier codes", () 
   assert.equal(isHouseSku(""), false);
 });
 
-test("supplierSkuColumn finds the metafield column regardless of prefix/scope", () => {
-  assert.equal(
-    supplierSkuColumn(["Handle", "Variant Metafield: custom.supplier_sku [single_line_text_field]"]),
-    "Variant Metafield: custom.supplier_sku [single_line_text_field]"
-  );
-  assert.equal(
-    supplierSkuColumn(["Handle", "Supplier SKU (variant.metafields.custom.supplier_sku)"]),
-    "Supplier SKU (variant.metafields.custom.supplier_sku)"
-  );
-  assert.equal(supplierSkuColumn(["Handle", "Variant SKU"]), null);
-  assert.equal(supplierSkuColumn([]), null);
-  assert.equal(supplierSkuColumn(undefined), null);
+test("resolveSupplierSku: first run uses non-house Variant SKU (ignores stray barcode)", () => {
+  const row = { "Variant SKU": "AEAM-S-58-291", [SUPPLIER_SKU_FIELD]: "STRAY" };
+  assert.equal(resolveSupplierSku(row), "AEAM-S-58-291");
 });
 
-test("resolveSupplierSku: metafield takes precedence", () => {
-  const col = "Variant Metafield: custom.supplier_sku [single_line_text_field]";
-  const row = { "Variant SKU": "AE-AM-95286A", [col]: "REAL-CODE-1" };
-  assert.equal(resolveSupplierSku(row, col), "REAL-CODE-1");
+test("resolveSupplierSku: already processed reads the code back from Variant Barcode", () => {
+  const row = { "Variant SKU": "AE-AM-95286A", [SUPPLIER_SKU_FIELD]: "REAL-CODE-1" };
+  assert.equal(resolveSupplierSku(row), "REAL-CODE-1");
 });
 
-test("resolveSupplierSku: first-run falls back to non-house Variant SKU", () => {
-  const row = { "Variant SKU": "AEAM-S-58-291" };
-  assert.equal(resolveSupplierSku(row, null), "AEAM-S-58-291");
-});
-
-test("resolveSupplierSku: house-format Variant SKU is ignored (no double-hash)", () => {
+test("resolveSupplierSku: house-format Variant SKU with no barcode yields '' (double-hash guard)", () => {
   const row = { "Variant SKU": "AE-AM-95286A" };
-  assert.equal(resolveSupplierSku(row, null), "");
+  assert.equal(resolveSupplierSku(row), "");
 });
 
-test("resolveSupplierSku: blank metafield falls through to Variant SKU", () => {
-  const col = "Variant Metafield: custom.supplier_sku [single_line_text_field]";
-  const row = { "Variant SKU": "AEAM-S-58-291", [col]: "  " };
-  assert.equal(resolveSupplierSku(row, col), "AEAM-S-58-291");
-});
-
-test("resolveSupplierSku: nothing resolvable yields empty string", () => {
-  assert.equal(resolveSupplierSku({ "Variant SKU": "" }, null), "");
+test("resolveSupplierSku: blank Variant SKU yields '' even with a stray barcode (golden-safe)", () => {
+  assert.equal(resolveSupplierSku({ "Variant SKU": "", [SUPPLIER_SKU_FIELD]: "STRAY" }), "");
+  assert.equal(resolveSupplierSku({ "Variant SKU": "" }), "");
 });

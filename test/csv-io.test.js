@@ -7,7 +7,7 @@ import { parseCSV, aoaToCSV } from "../js/csv.js";
 import { buildReferences } from "../js/sku/loaders.js";
 import { generate } from "../js/sku/engine.js";
 import { buildReimportCsv } from "../js/matrixify.js";
-import { SUPPLIER_SKU_COLUMN } from "../js/sku/config.js";
+import { SUPPLIER_SKU_FIELD } from "../js/sku/config.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const read = (p) => readFileSync(join(here, p), "utf-8");
@@ -32,9 +32,10 @@ test("full CSV export → CSV out preserves rows/columns and fills SKUs", () => 
   const csvOut = buildReimportCsv(input.header, input.rows, result);
   const reparsed = parseCSV(csvOut);
 
-  // Same row count; supplier column appended (effecto has none).
+  // Same row count; effecto already has a Variant Barcode column, so none is appended.
   assert.equal(reparsed.rows.length, input.rows.length);
-  assert.equal(reparsed.header.at(-1), SUPPLIER_SKU_COLUMN);
+  assert.ok(input.header.includes(SUPPLIER_SKU_FIELD), "fixture already has Variant Barcode");
+  assert.equal(reparsed.header.length, input.header.length, "no column appended");
   assert.ok(input.header.every((c) => reparsed.header.includes(c)), "original columns preserved");
 
   // Every variant row's Variant SKU matches the Python golden (byte-identical path).
@@ -46,7 +47,7 @@ test("full CSV export → CSV out preserves rows/columns and fills SKUs", () => 
   assert.equal(mismatches, 0);
 });
 
-test("supplier code is captured into the metafield column on first run", () => {
+test("supplier code is captured into Variant Barcode on first run", () => {
   const input = parseCSV(read("fixtures/export_effecto.csv"));
   const result = generate(input.rows, refs, input.header);
   const reparsed = parseCSV(buildReimportCsv(input.header, input.rows, result));
@@ -56,7 +57,7 @@ test("supplier code is captured into the metafield column on first run", () => {
   for (let i = 0; i < input.rows.length && checked < 3; i++) {
     const orig = (input.rows[i]["Variant SKU"] || "").trim();
     if (orig && !/^[A-Z0-9]{2,3}-[A-Z0-9]{2}(-|$)/.test(orig)) {
-      assert.equal(reparsed.rows[i][SUPPLIER_SKU_COLUMN], orig, "supplier code captured");
+      assert.equal(reparsed.rows[i][SUPPLIER_SKU_FIELD], orig, "supplier code carried in Variant Barcode");
       assert.ok(/^[A-Z0-9]{2,3}-[A-Z0-9]{2}/.test(reparsed.rows[i]["Variant SKU"]), "house SKU written");
       checked++;
     }

@@ -6,7 +6,7 @@ import { dirname, join } from "node:path";
 import { parseCSV } from "../js/csv.js";
 import { buildReferences } from "../js/sku/loaders.js";
 import { generate } from "../js/sku/engine.js";
-import { SUPPLIER_SKU_COLUMN } from "../js/sku/config.js";
+import { SUPPLIER_SKU_FIELD } from "../js/sku/config.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const read = (p) => readFileSync(join(here, p), "utf-8");
@@ -21,16 +21,16 @@ const refs = buildReferences({
 
 // Simulate what the store returns after importing the generated file and
 // re-exporting: Variant SKU now holds the house SKU, and the supplier code
-// lives in the supplier metafield column. Image rows are untouched.
+// lives in the Variant Barcode carrier field. Image rows are untouched.
 function roundTrip(rows, header, result) {
-  const outHeader = header.includes(SUPPLIER_SKU_COLUMN) ? header : [...header, SUPPLIER_SKU_COLUMN];
+  const outHeader = header.includes(SUPPLIER_SKU_FIELD) ? header : [...header, SUPPLIER_SKU_FIELD];
   const outRows = rows.map((row, i) => {
     const r = result.rows[i];
     const copy = {};
     for (const c of outHeader) copy[c] = row[c] !== undefined ? row[c] : "";
     if (r.isVariant) {
       if (r.sku !== "") copy["Variant SKU"] = r.sku; // house SKU written back
-      copy[SUPPLIER_SKU_COLUMN] = r.supplierSku;       // durable code preserved
+      copy[SUPPLIER_SKU_FIELD] = r.supplierSku;        // durable code carried in Variant Barcode
     }
     return copy;
   });
