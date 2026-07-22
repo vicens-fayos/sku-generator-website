@@ -1,0 +1,30 @@
+:root { color-scheme: light dark; --bg:#fff; --fg:#1a1a1a; --muted:#666; --border:#ddd; --accent:#2563eb; --warn:#b45309; --panel:#f6f7f9; }
+@media (prefers-color-scheme: dark) { :root { --bg:#14161a; --fg:#e8e8e8; --muted:#9aa0a6; --border:#333; --accent:#60a5fa; --warn:#f59e0b; --panel:#1c1f24; } }
+* { box-sizing: border-box; }
+body { margin:0; font:15px/1.5 system-ui, sans-serif; background:var(--bg); color:var(--fg); }
+main { max-width: 1000px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+h1 { margin:0 0 .25rem; }
+.sub { color:var(--muted); margin:0 0 1.5rem; }
+.drop { border:2px dashed var(--border); border-radius:12px; padding:2rem; text-align:center; transition:border-color .15s; }
+.drop.dragover { border-color:var(--accent); }
+.drop button { font:inherit; padding:.6rem 1rem; border-radius:8px; border:1px solid var(--accent); background:var(--accent); color:#fff; cursor:pointer; }
+.filename { margin-left:.75rem; color:var(--muted); }
+.hint { color:var(--muted); margin:.75rem 0 0; }
+.error { color:#dc2626; font-weight:600; }
+.stats { display:flex; flex-wrap:wrap; gap:.75rem; margin:1.5rem 0; }
+.stat { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:.6rem .9rem; }
+.stat b { display:block; font-size:1.3rem; }
+.stat span { color:var(--muted); font-size:.8rem; }
+.warnings { margin-bottom:1rem; border:1px solid var(--warn); border-radius:10px; padding:.5rem .9rem; }
+.warnings summary { color:var(--warn); cursor:pointer; font-weight:600; }
+.warnings ul { margin:.5rem 0; }
+.toolbar { display:flex; gap:.75rem; margin-bottom:.75rem; }
+.toolbar input { flex:1; font:inherit; padding:.5rem .75rem; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--fg); }
+.toolbar button { font:inherit; padding:.5rem 1rem; border-radius:8px; border:1px solid var(--accent); background:var(--accent); color:#fff; cursor:pointer; }
+.table-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:10px; }
+table { border-collapse:collapse; width:100%; }
+th, td { text-align:left; padding:.5rem .75rem; border-bottom:1px solid var(--border); white-space:nowrap; }
+thead th { position:sticky; top:0; background:var(--panel); }
+td.sku { font-family:ui-monospace, monospace; }
+td.review { color:var(--warn); font-size:.85rem; }
+tr.flagged td.sku { color:var(--warn); }
