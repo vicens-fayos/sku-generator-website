@@ -1,7 +1,8 @@
 import { readProducts } from "./xlsx.js";
+import { parseCSV } from "./csv.js";
 import { buildReferences } from "./sku/loaders.js";
 import { generate } from "./sku/engine.js";
-import { buildReimport } from "./matrixify.js";
+import { buildReimport, buildReimportCsv } from "./matrixify.js";
 
 const REF_FILES = {
   vendor: "data/vendor_mapping_canonical.csv",
@@ -32,6 +33,7 @@ const $ = (id) => document.getElementById(id);
 let lastResult = null;
 let lastInput = null;   // { header, rows } from the uploaded file
 let lastFileName = "export.xlsx";
+let lastFormat = "xlsx"; // "csv" | "xlsx" — output matches input
 
 function showError(msg) {
   const el = $("error");
@@ -94,14 +96,33 @@ function renderTable(rows, filter) {
 
 function downloadReimport() {
   if (!lastInput || !lastResult) return;
-  const buf = buildReimport(lastInput.header, lastInput.rows, lastResult);
-  const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-  const base = lastFileName.replace(/\.xlsx$/i, "");
+  const base = lastFileName.replace(/\.(csv|xlsx)$/i, "");
+  let blob, ext;
+  if (lastFormat === "csv") {
+    const text = buildReimportCsv(lastInput.header, lastInput.rows, lastResult);
+    blob = new Blob([text], { type: "text/csv" });
+    ext = "csv";
+  } else {
+    const buf = buildReimport(lastInput.header, lastInput.rows, lastResult);
+    blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    ext = "xlsx";
+  }
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url; a.download = `${base}-with-skus.xlsx`;
+  a.href = url; a.download = `${base}-with-skus.${ext}`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// Read the uploaded export, dispatching on file type: .csv is parsed directly;
+// anything else is read as an xlsx workbook (the "Products" sheet).
+async function readExport(file) {
+  if (/\.csv$/i.test(file.name)) {
+    const { header, rows } = parseCSV(await file.text());
+    return { header, rows, format: "csv" };
+  }
+  const { header, rows } = readProducts(new Uint8Array(await file.arrayBuffer()));
+  return { header, rows, format: "xlsx" };
 }
 
 async function handleFile(file) {
@@ -109,9 +130,10 @@ async function handleFile(file) {
   $("filename").textContent = file.name;
   lastFileName = file.name || "export.xlsx";
   try {
-    const [refs, buf] = await Promise.all([loadRefs(), file.arrayBuffer()]);
-    const { header, rows } = readProducts(new Uint8Array(buf));
+    const refs = await loadRefs();
+    const { header, rows, format } = await readExport(file);
     lastInput = { header, rows };
+    lastFormat = format;
     lastResult = generate(rows, refs, header);
     renderStats(lastResult.stats);
     renderWarnings(lastResult.warnings);

@@ -1,9 +1,16 @@
 # SKU Generator Website
 
-Upload a Matrixify Shopify product export (`.xlsx`) and get the generated
-Shopify **Variant SKU** for every variant row — as a review table and a
-downloadable **re-import `.xlsx`**. Runs 100% in the browser; nothing is
-uploaded to any server.
+Upload a **full** Matrixify Shopify product export (`.csv` or `.xlsx`) and get
+the generated Shopify **Variant SKU** for every row — as a review table and a
+downloadable re-import file in the **same format you uploaded** (CSV in → CSV
+out, xlsx in → xlsx out). Runs 100% in the browser; nothing is uploaded to any
+server.
+
+> Upload the **whole** export, not a single product. SKU disambiguation is a
+> whole-catalog property: a collider suffix like `-6EDD` only appears because
+> several products share a `VENDOR-TYPE` base, so a partial upload can't
+> reproduce it. The engine classifies each row (product lead / variant /
+> image placeholder) exactly like the Python batch tool.
 
 ## Idempotency (supplier-SKU metafield)
 
